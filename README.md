@@ -36,15 +36,23 @@ bc1
 b+a
 
 Possible math operations:
+
 Plus: +
+
 Minus: -
+
 Multiplication: *
+
 Division "floor division": /
+
 Division "complete": int/double or double/int or double/double (to be a double can be used for example 2. )
+
 Module: %
+
 Simple Pow: ^
 
 Assignemt of variable:
+
 varname = ...
 
 Complex functions are to be created
