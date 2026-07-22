@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "token.h"
 #include "utils.h"
+#include "dynarr.h"
 
 typedef struct {
     Token *tokens;
@@ -15,6 +16,7 @@ ASTNode *parseFactor(Parser *parser);
 ASTNode *parseTerm(Parser *parser);
 ASTNode *parseExpression(Parser *parser);
 ASTNode *parseAssignment(Parser *parser);
+ASTNode *parseFunction(Parser *parser);
 ASTNode *parse(Parser *parser);
 
 #endif

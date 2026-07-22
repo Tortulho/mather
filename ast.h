@@ -12,6 +12,7 @@ typedef enum {
     AST_MATHOP,
     AST_SIGNAL,
     AST_ASSIGN,
+    AST_FUNCTION,
 
 } ASTNodeType;
 
@@ -49,6 +50,14 @@ typedef struct ASTNode {
 
         } assign;
 
+        struct {
+
+            char *name;
+            struct ASTNode **args;
+            size_t argc;
+
+        } function;
+
     } value;
 } ASTNode;  
 
@@ -60,6 +69,7 @@ ASTNode *ast_newOperator(Token op,
                   ASTNode *right);
 ASTNode *ast_newSignalizer(Token op, ASTNode *child);
 ASTNode *ast_newAssign(ASTNode *left, ASTNode *right);
-void ast_free(ASTNode *node) ;
+ASTNode *ast_newFunction(const char *name, ASTNode **args, size_t argc);
+void ast_free(ASTNode *node);
 
 #endif

@@ -95,6 +95,12 @@ void tokenize(char *text, Token *tokenarr, int tokensize, int *tokencount) {
             startstrcpy = text;
             tokencounter++;
             text++;
+        } else if (*text == ',') {
+            tokenarr[tokencounter].type = TOKEN_COMMA;
+            chrcounter = 0;
+            startstrcpy = text;
+            tokencounter++;
+            text++;
         } else if (*text == '\0') {
             //END OF STRING / INVALID TOKEN
             break;

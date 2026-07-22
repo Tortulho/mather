@@ -37,7 +37,7 @@ ASTNode *ast_newVariable(const char *name) {
     strcpy(var,name);
 
     node->type = AST_VARIABLE;
-    node->value.variable = name;
+    node->value.variable = var; //FIXED
 
     return node;
 }
@@ -74,8 +74,7 @@ ASTNode *ast_newOperator(Token op,
 ASTNode *ast_newSignalizer(Token op, ASTNode *child) {
 
     ASTNode *node = malloc(sizeof(ASTNode));
-    if (node == NULL)
-        return NULL;
+    if (node == NULL) return NULL;
 
     node->type = AST_SIGNAL;
 
@@ -84,6 +83,34 @@ ASTNode *ast_newSignalizer(Token op, ASTNode *child) {
 
     return node;
 }
+
+ASTNode *ast_newFunction(
+    const char *name,
+    ASTNode **args,
+    size_t argc
+) {
+    if (name == NULL) return NULL;
+
+    ASTNode *node = malloc(sizeof(ASTNode));
+    if (node == NULL) return NULL;
+
+    char *funcname = calloc(strlen(name) + 1, 1);
+    if (funcname == NULL) {
+        free(node);
+        return NULL;
+    }
+
+    strcpy(funcname, name);
+
+    node->type = AST_FUNCTION;
+
+    node->value.function.name = funcname;
+    node->value.function.args = args;
+    node->value.function.argc = argc;
+
+    return node;
+}
+
 
 void ast_free(ASTNode *node) {
 
@@ -118,6 +145,17 @@ void ast_free(ASTNode *node) {
 
             ast_free(node->value.assign.left);
             ast_free(node->value.assign.right);
+            break;
+
+        case AST_FUNCTION:
+
+            for (size_t i = 0; i < node->value.function.argc; i++) {
+                ast_free(node->value.function.args[i]);
+            }
+
+            free(node->value.function.args);
+            free(node->value.function.name);
+
             break;
 
         default:

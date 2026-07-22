@@ -37,8 +37,13 @@ evaluate(node)
 #include "parser.h"
 #include "interpreter.h"
 #include "dict.h"
+#include "builtinfuncs.h"
+#include "dynarr.h"
+#include "runtime.h"
+#include <stdio.h>
+#include <math.h>
 
-RuntimeValue interpret(ASTNode *node, Dictionary *variables) {
+RuntimeValue interpret(ASTNode *node, Dictionary *variables, Dictionary *functions) {
 
     if (node == NULL)
         exit(EXIT_FAILURE);
@@ -52,16 +57,19 @@ RuntimeValue interpret(ASTNode *node, Dictionary *variables) {
             return interpretFloat(node);
 
         case AST_ASSIGN:
-            return interpretAssign(node,variables);
+            return interpretAssign(node,variables,functions);
 
         case AST_VARIABLE:
             return interpretVariable(node,variables);
 
         case AST_SIGNAL:
-            return interpretSignal(node,variables);
+            return interpretSignal(node,variables,functions);
 
         case AST_MATHOP:
-            return interpretOperator(node,variables);
+            return interpretOperator(node,variables,functions);
+
+        case AST_FUNCTION:
+            return interpretFunction(node,variables,functions);
 
         default:
             exit(EXIT_FAILURE);
@@ -88,11 +96,11 @@ RuntimeValue interpretFloat(ASTNode *node) {
     return value;
 }
 
-RuntimeValue interpretSignal(ASTNode *node, Dictionary *variables) {
+RuntimeValue interpretSignal(ASTNode *node, Dictionary *variables, Dictionary *functions) {
 
     RuntimeValue value;
 
-    value = interpret(node->value.signal.child, variables);
+    value = interpret(node->value.signal.child, variables, functions);
 
     switch (node->value.signal.op.value.numINT) {
 
@@ -117,14 +125,14 @@ RuntimeValue interpretSignal(ASTNode *node, Dictionary *variables) {
     }
 }
 
-RuntimeValue interpretOperator(ASTNode *node, Dictionary *variables) {
+RuntimeValue interpretOperator(ASTNode *node, Dictionary *variables, Dictionary *functions) {
 
     RuntimeValue left;
     RuntimeValue right;
     RuntimeValue result;
 
-    left = interpret(node->value.Operator.left, variables);
-    right = interpret(node->value.Operator.right, variables);
+    left = interpret(node->value.Operator.left, variables, functions);
+    right = interpret(node->value.Operator.right, variables, functions);
 
     /* Pelo menos um float */
     if (left.type == VALUE_FLOAT || right.type == VALUE_FLOAT) {
@@ -161,27 +169,13 @@ RuntimeValue interpretOperator(ASTNode *node, Dictionary *variables) {
             case '/':
                 result.value.floater = l / r;
                 break;
+            case '^':
+                result.value.floater = pow(l,r);
+                break;
             default:
                 exit(EXIT_FAILURE);
         }
 
-        return result;
-    }
-
-    if (node->value.Operator.op.value.numINT == '^') {
-        double l;
-
-        if (left.type == VALUE_FLOAT)
-            l = left.value.floater;
-        else
-            l = (double)left.value.integer;
-
-        if (right.type == VALUE_FLOAT)
-            exit(EXIT_FAILURE);
-        result.type = VALUE_FLOAT;
-        long r = right.value.integer;
-
-        result.value.floater = powto(l,r);
         return result;
     }
 
@@ -204,13 +198,17 @@ RuntimeValue interpretOperator(ASTNode *node, Dictionary *variables) {
             break;
 
         case '/':
-            result.value.integer = left.value.integer / right.value.integer;
-            break;
+            result.type = VALUE_FLOAT;
+            result.value.floater = (double)left.value.integer / (double)right.value.integer;
+            return result;
 
         case '%':
             result.value.integer = left.value.integer % right.value.integer;
             break;
 
+        case '^':
+            result.value.floater = pow(left.value.integer,right.value.integer);
+            result.type = VALUE_FLOAT;
         default:
             exit(EXIT_FAILURE);
     }
@@ -230,14 +228,15 @@ RuntimeValue interpretVariable(ASTNode *node, Dictionary *variables) {
     return *value;
 }
 
-RuntimeValue interpretAssign(ASTNode *node, Dictionary *variables) {
+RuntimeValue interpretAssign(ASTNode *node, Dictionary *variables, Dictionary *functions) {
 
+    if (node == NULL) exit(EXIT_FAILURE);
     ASTNode *left = node->value.assign.left;
     if (left->type != AST_VARIABLE)
         exit(EXIT_FAILURE);
     const char *name = left->value.variable;
 
-    RuntimeValue result = interpret(node->value.assign.right, variables);
+    RuntimeValue result = interpret(node->value.assign.right, variables, functions);
 
     RuntimeValue *stored = malloc(sizeof(RuntimeValue));
     if (stored == NULL) exit(EXIT_FAILURE);
@@ -251,4 +250,38 @@ RuntimeValue interpretAssign(ASTNode *node, Dictionary *variables) {
     }
     if (!dictInsert(variables, name, stored)) exit(EXIT_FAILURE);
     return result;
+}
+
+RuntimeValue interpretFunction(ASTNode *node,
+                               Dictionary *variables,
+                               Dictionary *functions) 
+{
+    if (node == NULL) exit(EXIT_FAILURE);
+    
+    BuiltinFunction function;
+    function = (BuiltinFunction)dictGet(functions,
+                                        node->value.function.name);
+
+    if (function == NULL) {
+        printf("Error: Unknown function '%s'.\n", node->value.function.name);
+        exit(EXIT_FAILURE);
+    }
+
+    RuntimeValue *args;
+
+    args = malloc(node->value.function.argc * sizeof(RuntimeValue));
+    if (args == NULL) exit(EXIT_FAILURE);
+
+    for (size_t i = 0; i < node->value.function.argc; i++) {
+
+        args[i] = interpret(node->value.function.args[i], variables, functions);
+    }
+
+    RuntimeValue result;
+
+    result = function(args, node->value.function.argc);
+
+    free(args);
+    return result;
+
 }
