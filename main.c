@@ -24,6 +24,9 @@ int main(void) {
     ASTNode *root;
     RuntimeValue result;
 
+    RuntimeContext ctx;
+    runtimeClearError(&ctx);
+
     builtinRegister(&functions);
 
     while (1) {
@@ -31,28 +34,19 @@ int main(void) {
 
         fgets(input, sizeof(input), stdin);
 
-        tokenize(input, tokens, 256, &tokenCount);
+        runtimeClearError(&ctx);
 
-        //DEBUG
-        // printf("Tokens (%d):\n", tokenCount);
-        // for (int i = 0; i < tokenCount; i++) {
+        tokenize(input, tokens, 256, &tokenCount, &ctx);
 
-        //     printf("%d: type=%d", i, tokens[i].type);
+        if (ctx.hasError) {
 
-        //     if (tokens[i].type == TOKEN_STRING)
-        //         printf(" \"%s\"", tokens[i].value.string);
+            printf("Error: %s\n", ctx.message);
 
-        //     if (tokens[i].type == TOKEN_INT)
-        //         printf(" %ld", tokens[i].value.numINT);
+            //ast_free(root);
+            freeTokens(tokens, tokenCount);
 
-        //     if (tokens[i].type == TOKEN_FLOAT)
-        //         printf(" %f", tokens[i].value.numFLOAT);
-
-        //     if (tokens[i].type == TOKEN_MATH_OPERATOR)
-        //         printf(" '%c'", tokens[i].value.numINT);
-
-        //     printf("\n");
-        // }
+            continue;
+        }
 
         parser.tokens = tokens;
         parser.count = tokenCount;
@@ -61,19 +55,32 @@ int main(void) {
         root = parse(&parser);
 
         if (root == NULL) {
-            printf("Error: Syntax error.\n");
-            return EXIT_FAILURE;
+            runtimeError(&ctx,ERROR_SYNTAX,"Syntax error.");
+            printf("Error: %s\n", ctx.message);
+            ast_free(root);
+            freeTokens(tokens, tokenCount);
+            continue;
         }
 
-        //DEBUG
-        //printf("parser.pos = %d\n", parser.pos);
-        //printf("parser.count = %d\n", parser.count);
         if (parser.pos != parser.count) {
-            printf("Error: Unexpected tokens to interpret.\n");
-            return EXIT_FAILURE;
+            runtimeError(&ctx,ERROR_UNEXPECTED_TOKEN,"Unexpected tokens to interpret.");
+            printf("Error: %s\n", ctx.message);
+            ast_free(root);
+            freeTokens(tokens, tokenCount);
+            continue;
         }
 
-        result = interpret(root, &varDict, &functions);
+        result = interpret(root, &varDict, &functions, &ctx);
+
+        if (ctx.hasError) {
+
+            printf("Error: %s\n", ctx.message);
+
+            ast_free(root);
+            freeTokens(tokens, tokenCount);
+
+            continue;
+        }
 
         if (result.type == VALUE_INT)
             printf("%ld\n", result.value.integer);
@@ -85,7 +92,9 @@ int main(void) {
         ast_free(root);
     }
     
+    //FREE
     dictDestroy(&varDict);
+    dictDestroy(&functions);
 
     return 0;
 }
