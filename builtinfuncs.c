@@ -10,10 +10,11 @@
 #include "dict.h"
 #include "builtinfuncs.h"
 #include "runtime.h"
+#include "error.h"
 #include <math.h>
 
 void builtinRegister(Dictionary *functions) {
-    dictInsert(functions, "test", builtin_test);
+    dictInsert(functions, "echo", builtin_test);
     dictInsert(functions, "sqrt", builtin_sqrt);
     dictInsert(functions, "exit", builtin_exit);
     dictInsert(functions, "sin", builtin_sin);
@@ -22,33 +23,31 @@ void builtinRegister(Dictionary *functions) {
     dictInsert(functions, "randprob", builtin_randprob);
 }
 
-static RuntimeValue builtin_test(RuntimeValue *args, size_t argc) {
+static RuntimeValue builtin_test(RuntimeValue *args, size_t argc, RuntimeContext *ctx) {
     if (argc != 1) {
-        printf("Error: test() expects exactly 1 argument.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_ARGUMENT_COUNT,"echo() expects exactly 1 argument.");
+        return INVALID_VALUE;
     }
     return args[0];
 }
 
 //EXAMPLE
-static RuntimeValue builtin_exit(RuntimeValue *args, size_t argc) {
-    if (argc != 0) {
-        printf("Error: exit() expects exactly 0 arguments.\n");
-        exit(EXIT_FAILURE);
-    } else {
-        exit(EXIT_SUCCESS);
-    }
-    RuntimeValue value;
-    value.type = VALUE_VOID;
-    return value;
+static RuntimeValue builtin_exit(RuntimeValue *args,
+                                 size_t argc,
+                                 RuntimeContext *ctx) {
+    (void)args;
+    (void)argc;
+    (void)ctx;
+
+    exit(EXIT_SUCCESS);
 }
 
 static RuntimeValue builtin_sqrt(RuntimeValue *args,
-                                 size_t argc) {
+                                 size_t argc, RuntimeContext *ctx) {
 
     if (argc != 1) {
-        printf("Error: sqrt() expects exactly 1 argument.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_ARGUMENT_COUNT,"sqrt() expects exactly 1 argument.");
+        return INVALID_VALUE;
     }
 
     double value;
@@ -57,13 +56,13 @@ static RuntimeValue builtin_sqrt(RuntimeValue *args,
     } else if (args[0].type == VALUE_INT) {
         value = sqrt((double)args[0].value.integer);
     } else {
-        printf("Error: sqrt() expects exactly 1 argument of type float/int.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_ARGUMENT_COUNT,"sqrt() expects exactly 1 argument.");
+        return INVALID_VALUE;
     }
 
     if (isnan(value)) {
-        printf("Error: sqrt() domain error.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_INVALID_ARGUMENT,"sqrt() expects a single non-negative value.");
+        return INVALID_VALUE;
     }
 
     args[0].type = VALUE_FLOAT;
@@ -74,11 +73,11 @@ static RuntimeValue builtin_sqrt(RuntimeValue *args,
 }
 
 static RuntimeValue builtin_sin(RuntimeValue *args,
-                                size_t argc) {
+                                size_t argc, RuntimeContext *ctx) {
 
     if (argc != 1) {
-        printf("Error: sin() expects exactly 1 argument.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_ARGUMENT_COUNT,"sin() expects exactly 1 argument.");
+        return INVALID_VALUE;
     }
 
     double value;
@@ -87,8 +86,8 @@ static RuntimeValue builtin_sin(RuntimeValue *args,
     } else if (args[0].type == VALUE_INT) {
         value = sin((double)args[0].value.integer);
     } else {
-        printf("Error: sin() expects exactly 1 argument of type float/int.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_INVALID_ARGUMENT,"sin() expects exactly 1 argument (number).");
+        return INVALID_VALUE;
     }
 
     args[0].type = VALUE_FLOAT;
@@ -98,11 +97,11 @@ static RuntimeValue builtin_sin(RuntimeValue *args,
 }
 
 static RuntimeValue builtin_cos(RuntimeValue *args,
-                                size_t argc) {
+                                size_t argc, RuntimeContext *ctx) {
 
     if (argc != 1) {
-        printf("Error: cos() expects exactly 1 argument.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_ARGUMENT_COUNT,"cos() expects exactly 1 argument.");
+        return INVALID_VALUE;
     }
 
     double value;
@@ -111,8 +110,8 @@ static RuntimeValue builtin_cos(RuntimeValue *args,
     } else if (args[0].type == VALUE_INT) {
         value = cos((double)args[0].value.integer);
     } else {
-        printf("Error: cos() expects exactly 1 argument of type float/int.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_INVALID_ARGUMENT,"cos() expects exactly 1 argument (number).");
+        return INVALID_VALUE;
     }
 
     args[0].type = VALUE_FLOAT;
@@ -121,20 +120,11 @@ static RuntimeValue builtin_cos(RuntimeValue *args,
 
 }
 
-static RuntimeValue builtin_clearvars(RuntimeValue *args,
-                                size_t argc);
-
-static RuntimeValue builtin_hex(RuntimeValue *args,
-                                size_t argc);
-
-static RuntimeValue builtin_bin(RuntimeValue *args,
-                                size_t argc);
-
 static RuntimeValue builtin_randint(RuntimeValue *args,
-                                size_t argc) {
+                                size_t argc, RuntimeContext *ctx) {
     if (argc != 2) {
-        printf("Error: randint() expects exactly 2 arguments (min,max).\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_ARGUMENT_COUNT,"randint() expects exactly 2 arguments (min,max).");
+        return INVALID_VALUE;
     }
 
     long min;
@@ -147,8 +137,8 @@ static RuntimeValue builtin_randint(RuntimeValue *args,
     else max = (long)args[1].value.floater;
 
     if (min > max) {
-        printf("Error: randint(): min > max.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_INVALID_ARGUMENT,"randint() expects max > min.");
+        return INVALID_VALUE;
     }
 
     RuntimeValue result;
@@ -160,11 +150,11 @@ static RuntimeValue builtin_randint(RuntimeValue *args,
 }
 
 static RuntimeValue builtin_randprob(RuntimeValue *args,
-                                size_t argc) {
+                                size_t argc, RuntimeContext *ctx) {
        
     if (argc != 0) {
-        printf("Error: randprob() expects exactly 0 arguments.\n");
-        exit(EXIT_FAILURE);
+        runtimeError(ctx,ERROR_ARGUMENT_COUNT,"randprob() expects exactly 0 arguments.");
+        return INVALID_VALUE;
     }                      
     
     RuntimeValue result;
@@ -173,4 +163,5 @@ static RuntimeValue builtin_randprob(RuntimeValue *args,
     result.value.floater = (double)rand() / (double)RAND_MAX;
     return result;
 }
+
 

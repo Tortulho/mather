@@ -1,6 +1,15 @@
 #ifndef TOKEN_H
 #define TOKEN_H
 
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include "utils.h"
+#include "runtime.h"
+#include "error.h"
+
+
 typedef struct {
 
     int type;
@@ -11,7 +20,6 @@ typedef struct {
         double numFLOAT;
         char *string;
     } value;
-    
 
 } Token;
 
@@ -35,7 +43,7 @@ typedef enum TokenType
 }
 TokenType;
 
-void tokenize(char *text, Token *tokenarr, int tokensize, int *tokencount);
+void tokenize(char *text, Token *tokenarr, int tokensize, int *tokencount, RuntimeContext *ctx);
 
 void freeTokens(Token *tokens, int count);
 

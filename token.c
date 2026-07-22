@@ -4,8 +4,10 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "utils.h"
+#include "runtime.h"
+#include "error.h"
 
-void tokenize(char *text, Token *tokenarr, int tokensize, int *tokencount) {
+void tokenize(char *text, Token *tokenarr, int tokensize, int *tokencount, RuntimeContext *ctx) {
 
     int tokencounter = 0;
     int chrcounter = 0;
@@ -29,7 +31,11 @@ void tokenize(char *text, Token *tokenarr, int tokensize, int *tokencount) {
                 text++;
             }
             tokenarr[tokencounter].value.string = calloc(chrcounter+1,1);
-            if (tokenarr[tokencounter].value.string == NULL) exit(EXIT_FAILURE);
+            if (tokenarr[tokencounter].value.string == NULL) {
+                runtimeError(ctx,ERROR_UNEXPECTED_TOKEN,"Unexpected token to tokenize. If it repeats can be a memory issue.");
+                *tokencount = tokencounter;
+                return;
+            }
             strncpy(tokenarr[tokencounter].value.string,startstrcpy,chrcounter);
             tokencounter++;
         }
@@ -105,7 +111,10 @@ void tokenize(char *text, Token *tokenarr, int tokensize, int *tokencount) {
             //END OF STRING / INVALID TOKEN
             break;
         } else {
-            exit(EXIT_FAILURE);
+            //TODO: ATTENTION
+            runtimeError(ctx,ERROR_UNEXPECTED_TOKEN,"Unexpected token to tokenize.");
+            *tokencount = tokencounter;
+            return;
         }
     }   
     *tokencount = tokencounter;

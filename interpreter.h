@@ -9,6 +9,7 @@
 #include "builtinfuncs.h"
 #include "dynarr.h"
 #include "runtime.h"
+#include "error.h"
 
 // typedef struct {
 
@@ -25,14 +26,14 @@
 
 // } RuntimeValue;
 
-RuntimeValue interpret(ASTNode *node, Dictionary *variables, Dictionary *functions);
+RuntimeValue interpret(ASTNode *node, Dictionary *variables, Dictionary *functions, RuntimeContext *ctx);
 
-RuntimeValue interpretInteger(ASTNode *node);
-RuntimeValue interpretFloat(ASTNode *node);
-RuntimeValue interpretSignal(ASTNode *node, Dictionary *variables, Dictionary *functions);
-RuntimeValue interpretOperator(ASTNode *node, Dictionary *variables, Dictionary *functions);
-RuntimeValue interpretVariable(ASTNode *node, Dictionary *variables);
-RuntimeValue interpretAssign(ASTNode *node, Dictionary *variables, Dictionary *functions);
-RuntimeValue interpretFunction(ASTNode *node, Dictionary *variables, Dictionary *functions);
+RuntimeValue interpretInteger(ASTNode *node, RuntimeContext *ctx);
+RuntimeValue interpretFloat(ASTNode *node, RuntimeContext *ctx);
+RuntimeValue interpretSignal(ASTNode *node, Dictionary *variables, Dictionary *functions, RuntimeContext *ctx);
+RuntimeValue interpretOperator(ASTNode *node, Dictionary *variables, Dictionary *functions, RuntimeContext *ctx);
+RuntimeValue interpretVariable(ASTNode *node, Dictionary *variables, RuntimeContext *ctx);
+RuntimeValue interpretAssign(ASTNode *node, Dictionary *variables, Dictionary *functions, RuntimeContext *ctx);
+RuntimeValue interpretFunction(ASTNode *node, Dictionary *variables, Dictionary *functions, RuntimeContext *ctx);
 
 #endif
