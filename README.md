@@ -17,6 +17,8 @@ varname = varname = ... = number
 
 varname = varname = ... = number operation number ...
 
+varname = func(parameters) operation number
+
 Syntax examples:
 x = 1
 x = 1 + 2
@@ -24,16 +26,22 @@ x = x * 4
 y = x * 2.3 + 4 + (x-2)/7
 x = y = z = 3
 x = abc = x - 4 ^ 3
+x = randint(1,100) + 3
 
 Invalid varnames:
-Varnames cannot have math operation signals or any type of number.
+Varnames cannot have math operation signals, brackets or any type of number.
 
 Invalid varnames (examples):
 
 123
+
 a12
+
 bc1
+
 b+a
+
+exit()
 
 Possible math operations:
 
@@ -43,16 +51,40 @@ Minus: -
 
 Multiplication: *
 
-Division "floor division": /
-
-Division "complete": int/double or double/int or double/double (to be a double can be used for example 2. )
+Division (complete division) : /
 
 Module: %
 
-Simple Pow: ^
+Pow: ^
 
 Assignemt of variable:
 
 varname = ...
 
-Complex functions are to be created
+Functions already developed:
+
+| NOTE - vars can be used instead of directly using numbers |
+
+test(number)
+
+exit()
+
+sqrt(non-negative number)
+
+sin(number)
+
+cos(number)
+
+randint(num_min,num_max)
+
+randprob() //returns a probability (from 0.0 to 1.0)
+
+Functions can be added on builtin_funcs.c and .h by the schematics on file
+
+Example of test and randint can be helpful
+
+Just don't forget to add to the funcs dictionary on the register
+
+
+
+
