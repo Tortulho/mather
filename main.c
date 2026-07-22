@@ -8,20 +8,23 @@
 #include "parser.h"
 #include "interpreter.h"
 #include "dict.h"
+#include "builtinfuncs.h"
+#include "runtime.h"
 
 int main(void) {
 
     char input[1024];
     Dictionary varDict = dictCreate();
+    Dictionary functions = dictCreate();
 
     Token tokens[256];
     int tokenCount = 0;
 
     Parser parser;
-
     ASTNode *root;
-
     RuntimeValue result;
+
+    builtinRegister(&functions);
 
     while (1) {
         printf(">>> ");
@@ -70,7 +73,7 @@ int main(void) {
             return EXIT_FAILURE;
         }
 
-        result = interpret(root, &varDict);
+        result = interpret(root, &varDict, &functions);
 
         if (result.type == VALUE_INT)
             printf("%ld\n", result.value.integer);
